@@ -34,6 +34,9 @@ public class StaffUtils {
     private static final HashMap<UUID, StaffSettings> STAFF_CACHE = new HashMap<>();
     private static final HashMap<UUID, StaffSettings> BOOSTER_CACHE = new HashMap<>();
 
+    private static final String POG_URL = "http://localhost:6969/v0/staff-settings?type=";
+    private static final int POG_VERSION = 1;
+
     public static boolean isStaff(UUID uuid) {
         return STAFF_CACHE.containsKey(uuid);
     }
@@ -52,8 +55,17 @@ public class StaffUtils {
     }
 
     private static HashMap<UUID, StaffSettings> getStaff() throws IOException {
+        return getStaffSettings("staff");
+    }
+
+    private static HashMap<UUID, StaffSettings> getBoosters() throws IOException {
+        return getStaffSettings("boosters");
+    }
+
+    private static HashMap<UUID, StaffSettings> getStaffSettings(String type) throws IOException {
         HashMap<UUID, StaffSettings> staff = new HashMap<>();
-        String content = HttpUtil.get(new URL("https://raw.githubusercontent.com/HyperiumClient/Hyperium-Repo/master/files/staff.json"));
+        String content = HttpUtil.get(new URL(POG_URL + type));
+
         JsonParser parser = new JsonParser();
         JsonArray array = parser.parse(content).getAsJsonArray();
 
@@ -67,25 +79,6 @@ public class StaffUtils {
         }
 
         return staff;
-    }
-
-    private static HashMap<UUID, StaffSettings> getBoosters() throws IOException {
-        HashMap<UUID, StaffSettings> boosters = new HashMap<>();
-        String raw = HttpUtil.get(new URL("https://api.github.com/gists/b070e7f75a9083d2e211caffa0c772cc"));
-        String content = new JsonHolder(raw).optJSONObject("files").optJSONObject("boosters.json").optString("content");
-        JsonParser parser = new JsonParser();
-        JsonArray array = parser.parse(content).getAsJsonArray();
-
-        int bound = array.size();
-        for (int i = 0; i < bound; i++) {
-            JsonObject item = array.get(i).getAsJsonObject();
-            UUID uuid = UUID.fromString(item.get("uuid").getAsString());
-            String colourStr = item.get("color").getAsString().toUpperCase(Locale.ENGLISH);
-            DotColour colour = colourStr.equals("CHROMA") ? new DotColour(true, ChatColor.WHITE) : new DotColour(false, ChatColor.valueOf(colourStr));
-            boosters.put(uuid, new StaffSettings(colour));
-        }
-
-        return boosters;
     }
 
     public static void clearCache() throws IOException {
